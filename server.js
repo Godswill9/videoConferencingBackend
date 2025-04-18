@@ -32,7 +32,9 @@
 // zoom-backend/index.js
 const express = require("express");
 const http = require("http");
-const { Server } = require("socket.io"); // ✅ Correct import
+// const { Server } = require("socket.io"); // ✅ Correct import
+const SocketIO = require("socket.io");
+
 const cors = require("cors");
 
 const app = express();
@@ -40,13 +42,12 @@ app.use(cors());
 
 const server = http.createServer(app);
 
-const io = new Server(server, {
+const io = new SocketIO.Server(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"],
   },
 });
-
 const rooms = {};
 
 io.on("connection", (socket) => {
