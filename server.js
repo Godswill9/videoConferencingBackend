@@ -33,7 +33,7 @@
 const express = require("express");
 const http = require("http");
 // const { Server } = require("socket.io"); // ✅ Correct import
-const SocketIO = require("socket.io");
+const socketIo = require("socket.io"); 
 
 const cors = require("cors");
 
@@ -42,12 +42,13 @@ app.use(cors());
 
 const server = http.createServer(app);
 
-const io = new SocketIO.Server(server, {
+const io = socketIo(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"],
   },
 });
+
 const rooms = {};
 
 io.on("connection", (socket) => {
