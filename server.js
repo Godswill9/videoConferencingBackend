@@ -30,18 +30,15 @@
 
 
 // zoom-backend/index.js
+// server.js
+const socketIo = require("socket.io"); 
 const express = require("express");
 const http = require("http");
-// const { Server } = require("socket.io"); // ✅ Correct import
-const socketIo = require("socket.io"); 
-
 const cors = require("cors");
 
 const app = express();
 app.use(cors());
-
 const server = http.createServer(app);
-
 const io = socketIo(server, {
   cors: {
     origin: "*",
@@ -55,27 +52,30 @@ io.on("connection", (socket) => {
   console.log("New connection:", socket.id);
 
   socket.on("join-room", (roomId) => {
-    socket.join(roomId);
-    console.log(`${socket.id} joined room ${roomId}`);
-
     if (!rooms[roomId]) rooms[roomId] = [];
+
+    const isInitiator = rooms[roomId].length === 0;
     rooms[roomId].push(socket.id);
 
-    const otherUsers = rooms[roomId].filter((id) => id !== socket.id);
-    if (otherUsers.length > 0) {
-      socket.emit("user-joined", otherUsers[0]);
-    }
+    socket.join(roomId);
+    socket.emit("joined-room", { initiator: isInitiator });
+
+    // Notify others
+    rooms[roomId].forEach((id) => {
+      if (id !== socket.id) {
+        io.to(id).emit("user-joined", socket.id);
+      }
+    });
 
     socket.on("signal", ({ to, from, data }) => {
       io.to(to).emit("signal", { from, data });
     });
 
     socket.on("disconnect", () => {
-      console.log("Disconnected:", socket.id);
-      rooms[roomId] = rooms[roomId].filter((id) => id !== socket.id);
-      socket.to(roomId).emit("user-left", socket.id);
+      rooms[roomId] = rooms[roomId].filter(id => id !== socket.id);
+      io.to(roomId).emit("user-left", socket.id);
     });
   });
 });
 
-server.listen(5000, () => console.log("Server is running on http://localhost:5000"));
+server.listen(5000, () => console.log("Server running on port 5000"));
