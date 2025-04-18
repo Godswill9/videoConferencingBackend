@@ -32,13 +32,14 @@
 // zoom-backend/index.js
 const express = require("express");
 const http = require("http");
-const { Server } = require("socket.io");
+const { Server } = require("socket.io"); // ✅ Correct import
 const cors = require("cors");
 
 const app = express();
 app.use(cors());
 
 const server = http.createServer(app);
+
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -53,17 +54,14 @@ io.on("connection", (socket) => {
 
   socket.on("join-room", (roomId) => {
     socket.join(roomId);
-    console.log(`Socket ${socket.id} joined room ${roomId}`);
+    console.log(`${socket.id} joined room ${roomId}`);
 
-    if (!rooms[roomId]) {
-      rooms[roomId] = [];
-    }
-
+    if (!rooms[roomId]) rooms[roomId] = [];
     rooms[roomId].push(socket.id);
 
     const otherUsers = rooms[roomId].filter((id) => id !== socket.id);
     if (otherUsers.length > 0) {
-      socket.emit("user-joined", otherUsers[0]); // Send the first user's ID to the new user
+      socket.emit("user-joined", otherUsers[0]);
     }
 
     socket.on("signal", ({ to, from, data }) => {
@@ -71,11 +69,11 @@ io.on("connection", (socket) => {
     });
 
     socket.on("disconnect", () => {
-      console.log("User disconnected:", socket.id);
+      console.log("Disconnected:", socket.id);
       rooms[roomId] = rooms[roomId].filter((id) => id !== socket.id);
       socket.to(roomId).emit("user-left", socket.id);
     });
   });
 });
 
-server.listen(5000, () => console.log("Server running on port 5000"));
+server.listen(5000, () => console.log("Server is running on http://localhost:5000"));
